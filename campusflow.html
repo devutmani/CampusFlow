@@ -40,6 +40,11 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
 .day{margin:12px 0 4px;font-weight:600}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:20}
 .toast.show{opacity:1}
+.week{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:8px;overflow-x:auto}
+.wd{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px;min-height:80px}
+.wd h3{margin:0 0 6px;font-size:13px;color:var(--muted)}
+.blk{background:var(--accent-soft);color:var(--text);border-radius:8px;padding:6px 8px;margin-bottom:6px;font-size:12.5px;line-height:1.35}
+.blk b{color:var(--accent)}.blk button{float:right;border:0;background:none;color:var(--bad);cursor:pointer;font-size:15px;padding:0 0 0 6px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -101,6 +106,7 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
       <h2>My timetable</h2>
       <p class="hint">Stored in a singly linked list. Add classes from Browse or from a plan above.</p>
       <div id="mine"></div>
+      <div class="row"><button class="btn ghost small" id="dl">Download CSV</button><button class="btn ghost small" id="clr">Clear all</button></div>
     </div>
   </section>
 
@@ -128,7 +134,7 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
   <section id="dsa" hidden>
     <div class="card">
       <h2>DSA requirements checklist</h2>
-      <p class="hint">What this website uses, and what the full console program (main.cpp) adds.</p>
+      <p class="hint">Which concepts the website and the console program (main.cpp) use.</p>
       <div class="scroll"><table><thead><tr><th>Concept</th><th>Where it is used</th><th>Website</th></tr></thead><tbody id="dsaRows"></tbody></table></div>
     </div>
   </section>
@@ -191,15 +197,12 @@ function addToMine(c) {
 
 function renderMine() {
   const list = mine.toArray().map((c, pos) => ({ c, pos }));
-  if (!list.length) { $("#mine").innerHTML = '<p class="hint">Nothing here yet.</p>'; return; }
-  list.sort((a, b) => DAYS.indexOf(a.c.day) - DAYS.indexOf(b.c.day) || a.c.start - b.c.start);
-  let html = "", lastDay = "";
-  for (const { c, pos } of list) {
-    if (c.day !== lastDay) { html += '<div class="day">' + c.day + "</div>"; lastDay = c.day; }
-    html += '<div class="row"><span><b>' + timeOf(c) + "</b> " + esc(c.course) + " · " + esc(c.section) + " · " + esc(c.room) +
-      '</span><button class="btn ghost small" data-rm="' + pos + '">Remove</button></div>';
-  }
-  $("#mine").innerHTML = html;
+  if (!list.length) { $("#mine").innerHTML = '<p class="hint">Nothing here yet. Add classes from Browse or a plan.</p>'; return; }
+  $("#mine").innerHTML = '<div class="week">' + DAYS.map(d => {
+    const items = list.filter(x => x.c.day === d).sort((x, y) => x.c.start - y.c.start);
+    return '<div class="wd"><h3>' + d + '</h3>' + items.map(({ c, pos }) =>
+      '<div class="blk"><button data-rm="' + pos + '" aria-label="Remove">×</button><b>' + timeOf(c) + '</b><br>' + esc(c.course) + '<br>' + esc(c.section) + ' · ' + esc(c.room) + '</div>').join("") + '</div>';
+  }).join("") + '</div>';
 }
 $("#mine").addEventListener("click", e => {
   const pos = e.target.dataset.rm;
@@ -411,18 +414,14 @@ $("#cGo").onclick = () => {
 
 // ---------- DSA map ----------
 const DSA = [
-  ["Singly linked list", "My timetable: add at end, remove by position, traverse", "✓"],
-  ["Doubly linked list", "Class browser (next / previous) in main.cpp", "main.cpp"],
-  ["Circular linked list", "Week-day cycle, Sat wraps to Mon, in main.cpp", "main.cpp"],
-  ["Stack (LIFO)", "Undo last change in main.cpp", "main.cpp"],
-  ["Queue (FIFO)", "Room-change requests in main.cpp", "main.cpp"],
-  ["Linear search", "Browse tab search over every class", "✓"],
-  ["Binary search", "Course lookup by name in main.cpp; the website uses the tree below", "main.cpp"],
-  ["Binary search tree", "Course index: insert, search with step count, in-order A–Z", "✓"],
-  ["Recursion", "Merge sort, quick sort, tree insert and in-order, backtracking", "✓"],
-  ["Backtracking", "Planner: choose a section, go deeper, undo on clash", "✓"],
-  ["Sorting (5 algorithms)", "Bubble, insertion, selection, merge, quick with comparison counts", "✓"],
-  ["Graph + BFS", "Clash graph groups in main.cpp", "main.cpp"]
+  ["Singly linked list", "My timetable: add at end, remove by position, traverse", "Both"],
+  ["Stack (LIFO)", "Undo last add / remove", "main.cpp"],
+  ["Linear search", "Search every class by section, teacher, course, room or day", "Both"],
+  ["Binary search", "Find a course by exact name in a sorted list (main.cpp)", "main.cpp"],
+  ["Binary search tree", "Course index: insert, search with step count, in-order A–Z", "Website"],
+  ["Sorting", "Website: 5 algorithms. main.cpp: bubble, merge, quick. Both count comparisons", "Both"],
+  ["Recursion", "Merge sort, quick sort, tree insert, in-order, backtracking", "Both"],
+  ["Backtracking", "Planner: choose a section, go deeper, undo on clash", "Both"]
 ];
 $("#dsaRows").innerHTML = DSA.map(r => "<tr><td>" + r[0] + "</td><td style='white-space:normal'>" + r[1] + "</td><td>" + r[2] + "</td></tr>").join("");
 
@@ -433,6 +432,15 @@ $("#tabs").addEventListener("click", e => {
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b === e.target));
   ["browse", "plan", "rooms", "dsa"].forEach(id => $("#" + id).hidden = id !== tab);
 });
+
+
+$("#clr").onclick = () => { while (mine.size) mine.removeAt(0); saveMine(); renderMine(); toast("Timetable cleared"); };
+$("#dl").onclick = () => {
+  if (!mine.size) return toast("Nothing to download");
+  const csv = "Course,Teacher,Section,Room,Day,Start,End\n" + mine.toArray().map(c => [c.course, c.teacher, c.section, c.room, c.day, fmt(c.start), fmt(c.end)].join(",")).join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "my_timetable.csv"; a.click();
+};
+$("#courseIn").addEventListener("keydown", e => { if (e.key === "Enter") $("#addCourse").click(); });
 
 runBrowse(true);
 renderMine();
