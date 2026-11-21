@@ -18,8 +18,8 @@ Timetable manager. The C++ program is a small local web server: it does all the 
 ## Run
 Open a terminal **inside the CampusFlow folder** and compile only `src/main.cpp`:
 
-    Linux / Mac : g++ -std=c++17 -O2 src/main.cpp -o campusflow && ./campusflow
-    Windows     : g++ -std=c++17 -O2 src/main.cpp -o campusflow -lws2_32 && campusflow.exe
+    g++ -std=c++17 -O2 src/main.cpp -o campusflow -lws2_32
+    ./campusflow.exe
 
 Then open http://localhost:8080 (it opens by itself on Windows/Mac). Press Ctrl+C to stop.
 
