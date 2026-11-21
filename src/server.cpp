@@ -1,7 +1,7 @@
 // ============================================================================
 //  server.cpp  -  CampusFlow: WEB PART ONLY (sockets, HTTP, JSON, URLs)
 //
-//  main.cpp includes this file, so compile ONLY main.cpp (do not compile this alone).
+//  main.cpp includes this file, so compile ONLY src/main.cpp (do not compile this alone).
 //  There is NO data-structure logic here. Every api...() function does 3 steps:
 //     1. read the values from the URL
 //     2. call a function from main.cpp   (sort, search, stack, linked list, ...)
@@ -100,7 +100,7 @@ string apiAdd(const Params &p) {
 string apiRemove(const Params &p) { string msg; bool ok = removeClass(atoi(get(p, "id").c_str()), msg); return reply(ok, msg); }
 string apiUndo(const Params &)    { string msg; bool ok = undoLast(msg); return reply(ok, msg); }
 string apiSave(const Params &) {
-    return saveCSV("timetable.csv", timetable) ? reply(true, "Saved to timetable.csv") : reply(false, "Could not save the file.");
+    return saveCSV(TIMETABLE_FILE, timetable) ? reply(true, "Saved to " + TIMETABLE_FILE) : reply(false, "Could not save the file.");
 }
 
 // /api/clashes
@@ -150,7 +150,7 @@ string apiPlan(const Params &p) {
 }
 
 // ---- my timetable (singly linked list). Saved to my_timetable.csv after every change.
-void saveMine() { saveCSV("my_timetable.csv", mine.toVector()); }
+void saveMine() { saveCSV(MY_FILE, mine.toVector()); }
 
 string apiMine(const Params &) { return "{\"rows\":" + jlist(mine.toVector()) + "}"; }
 
@@ -233,8 +233,8 @@ void handle(Sock client) {
     Params params = parseQuery(qm == string::npos ? "" : target.substr(qm + 1));
 
     if (path == "/" || path == "/index.html") {
-        string page = readFile("campusflow.html");
-        if (page.empty()) sendAll(client, "404 Not Found", "text/plain", "campusflow.html not found next to the program.");
+        string page = readFile(PAGE_FILE);
+        if (page.empty()) sendAll(client, "404 Not Found", "text/plain", "web/campusflow.html not found. Run the program from the CampusFlow folder.");
         else sendAll(client, "200 OK", "text/html; charset=utf-8", page);
         return;
     }

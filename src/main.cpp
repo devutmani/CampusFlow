@@ -1,3 +1,10 @@
+// ============================================================================
+//  CampusFlow  -  main.cpp  =  ALL the DATA STRUCTURE + ALGORITHM logic
+//  The web part (sockets, HTTP, JSON) is in server.cpp (included near the end).
+//
+//  Build (from the CampusFlow folder):
+//      g++ -std=c++17 -O2 src/main.cpp -o campusflow        (Windows: add -lws2_32)
+// ============================================================================
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -18,6 +25,11 @@ struct Cls {
 const string DAYS[6] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 vector<Cls> timetable;                            // the whole university timetable
 int nextId = 1;
+
+// where the files live (run the program from the CampusFlow folder)
+const string TIMETABLE_FILE = "data/timetable.csv";      // all university classes
+const string MY_FILE        = "data/my_timetable.csv";   // my saved timetable (made by the program)
+const string PAGE_FILE      = "web/campusflow.html";     // the web page
 
 // ---------------------------------------------------------------- small helpers
 string lower(string s) { for (char &c : s) c = tolower((unsigned char)c); return s; }
@@ -347,17 +359,17 @@ PlanResult planCourses(const vector<string> &names) {
 }
 
 // ================================================================ WEB PART (sockets + JSON)
-#include "server.cpp"
+#include "server.cpp"          // (same folder: src/)
 
 // ================================================================ main
 int main() {
-    if (!loadCSV("timetable.csv", timetable)) {
-        cout << "Error: timetable.csv not found. Put it in the same folder as the program.\n";
+    if (!loadCSV(TIMETABLE_FILE, timetable)) {
+        cout << "Error: " << TIMETABLE_FILE << " not found. Run the program from the CampusFlow folder.\n";
         return 1;
     }
     for (Cls &c : timetable) c.id = nextId++;                       // give every class an id
     vector<Cls> saved;
-    if (loadCSV("my_timetable.csv", saved)) restoreMine(saved);     // load my saved timetable
+    if (loadCSV(MY_FILE, saved)) restoreMine(saved);     // load my saved timetable
     cout << "Loaded " << timetable.size() << " classes, " << mine.toVector().size() << " in my timetable.\n";
     return runServer();                                             // start the web page (server.cpp)
 }
